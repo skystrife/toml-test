@@ -1,3 +1,4 @@
 {
-    "local-time": {"type": "local_time", "value": "07:49:12"}
+    "lt1": {"type": "local_time", "value": "07:49:12"},
+    "lt2": {"type": "local_time", "value": "07:49:12.010101"}
 }

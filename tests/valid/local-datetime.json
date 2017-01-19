@@ -1,3 +1,4 @@
 {
-    "local-datetime": {"type": "local_datetime", "value": "1970-02-03T23:03:01"}
+    "ldt1": {"type": "local_datetime", "value": "1970-02-03T23:03:01"},
+    "ldt2": {"type": "local_datetime", "value": "1970-02-03T23:03:01.010109"}
 }
