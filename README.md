@@ -91,6 +91,9 @@ In the above, `TTYPE` may be one of:
 * string
 * integer
 * float
+* local_date
+* local_time
+* local_datetime
 * datetime
 * bool
 * array
