@@ -1,7 +1,9 @@
 package main
 
 import (
+	"math"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -172,12 +174,21 @@ func (r result) cmpFloats(e, t string) result {
 			"value for key '%s'.", e, r.key)
 	}
 
+	// Go lacks a -NaN representation, so trim the negation sign from any
+	// -nans potentially coming from the parser output
+	if math.IsNaN(ef) {
+		t = strings.TrimPrefix(t, "-")
+	}
+
 	tf, err := strconv.ParseFloat(t, 64)
 	if err != nil {
 		return r.failedf("Malformed parser output. Could not read '%s' as "+
 			"a float value for key '%s'.", t, r.key)
 	}
-	if ef != tf {
+
+	// all comparisons against NaN are false, so explicitly check that the
+	// values are not both NaN
+	if ef != tf && !(math.IsNaN(ef) && math.IsNaN(tf)) {
 		return r.failedf("Values for key '%s' don't match. Expected a "+
 			"value of '%v' but got '%v'.", r.key, ef, tf)
 	}
