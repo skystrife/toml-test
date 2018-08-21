@@ -1,3 +1,4 @@
 {
-    "bestdayever": {"type": "datetime", "value": "1987-07-05T17:45:00Z"}
+  "bestdayever": {"type": "datetime", "value": "1987-07-05T17:45:00Z"},
+  "bestdayever2": {"type": "datetime", "value": "1987-07-05T17:45:00Z"}
 }
