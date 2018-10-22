@@ -7,3 +7,4 @@ has ' a quote character
 and more than
 one newline
 in it.'''
+tab = '''This string contains a tab character >	<'''

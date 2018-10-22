@@ -1,16 +1,8 @@
 package main
 
 import (
-	"math"
 	"strconv"
-	"strings"
 	"time"
-)
-
-const (
-	RFC3339Milli     = "2006-01-02T15:04:05.999Z07:00"
-	RFC3339Local     = "2006-01-02T15:04:05.999"
-	RFC3339LocalTime = "15:04:05.999"
 )
 
 // compareJson consumes the recursive structure of both `expected` and `test`
@@ -123,46 +115,38 @@ func (r result) cmpJsonValues(e, t map[string]interface{}) result {
 	// equality.
 	if etype == "array" {
 		return r.cmpJsonArrays(e["value"], t["value"])
-	}
-
-	// Floats need special attention too. Not every language can
-	// represent the same floats, and sometimes the string version of
-	// a float can be wonky with extra zeroes and what not.
-	//
-	// Similarly, datetimes and times need special attention because the
-	// standard only requires millisecond precision, but parsers may output
-	// more than millisecond resolution in the fractional seconds.
-	if etype == "float" || etype == "datetime" || etype == "local_time" || etype == "local_datetime" {
-		estr, ok := e["value"].(string)
+	} else {
+		// Atomic values are always strings
+		evalue, ok := e["value"].(string)
 		if !ok {
-			return r.failedf("BUG in test case. 'value' should be a string, "+
-				"but it is a %T.", e["value"])
+			return r.failedf("BUG in test case. 'value' "+
+				"should be a string, but it is a %T.",
+				e["value"])
 		}
-		tstr, ok := t["value"].(string)
+		tvalue, ok := t["value"].(string)
 		if !ok {
-			return r.failedf("Malformed parser output. 'value' should be a "+
-				"string but it is a %T.", t["value"])
+			return r.failedf("Malformed parser output. 'value' "+
+				"should be a string but it is a %T.",
+				t["value"])
 		}
 
-		if etype == "float" {
-			return r.cmpFloats(estr, tstr)
-		} else {
-			var dtype string
-			if etype == "datetime" {
-				dtype = RFC3339Milli
-			} else if etype == "local_datetime" {
-				dtype = RFC3339Local
-			} else {
-				dtype = RFC3339LocalTime
-			}
-			return r.cmpDateTime(dtype, estr, tstr)
+		// Excepting floats and datetimes, other values can be
+		// compared as strings.
+		switch etype {
+		case "float":
+			return r.cmpFloats(evalue, tvalue);
+		case "datetime":
+			return r.cmpAsDatetimes(evalue, tvalue);
+		default:
+			return r.cmpAsStrings(evalue, tvalue);
 		}
 	}
+}
 
-	// Otherwise, we can do simple string equality.
-	if e["value"] != t["value"] {
+func (r result) cmpAsStrings(e, t string) result {
+	if e != t {
 		return r.failedf("Values for key '%s' don't match. Expected a "+
-			"value of '%s' but got '%s'.", r.key, e["value"], t["value"])
+			"value of '%s' but got '%s'.", r.key, e, t)
 	}
 	return r
 }
@@ -170,51 +154,39 @@ func (r result) cmpJsonValues(e, t map[string]interface{}) result {
 func (r result) cmpFloats(e, t string) result {
 	ef, err := strconv.ParseFloat(e, 64)
 	if err != nil {
-		return r.failedf("BUG in test case. Could not read '%s' as a float "+
-			"value for key '%s'.", e, r.key)
-	}
-
-	// Go lacks a -NaN representation, so trim the negation sign from any
-	// -nans potentially coming from the parser output
-	if math.IsNaN(ef) {
-		t = strings.TrimPrefix(t, "-")
+		return r.failedf("BUG in test case. Could not read '%s' as a "+
+			"float value for key '%s'.", e, r.key)
 	}
 
 	tf, err := strconv.ParseFloat(t, 64)
 	if err != nil {
-		return r.failedf("Malformed parser output. Could not read '%s' as "+
-			"a float value for key '%s'.", t, r.key)
+		return r.failedf("Malformed parser output. Could not read '%s' "+
+			"as a float value for key '%s'.", t, r.key)
 	}
-
-	// all comparisons against NaN are false, so explicitly check that the
-	// values are not both NaN
-	if ef != tf && !(math.IsNaN(ef) && math.IsNaN(tf)) {
+	if ef != tf {
 		return r.failedf("Values for key '%s' don't match. Expected a "+
 			"value of '%v' but got '%v'.", r.key, ef, tf)
 	}
 	return r
 }
 
-func (r result) cmpDateTime(dtype, e, t string) result {
-	edate, err := time.Parse(dtype, e)
+func (r result) cmpAsDatetimes(e, t string) result {
+	var err error
+
+	ef, err := time.Parse(time.RFC3339Nano, e)
 	if err != nil {
-		return r.failedf("BUG in test case. Could not read '%s' as a Time "+
-			"value for key '%s'.", e, r.key)
+		return r.failedf("BUG in test case. Could not read '%s' as a "+
+			"datetime value for key '%s'.", e, r.key)
 	}
 
-	tdate, err := time.Parse(dtype, t)
+	tf, err := time.Parse(time.RFC3339Nano, t)
 	if err != nil {
-		return r.failedf("Malformed parser output. Could not read '%s' as "+
-			"a Time value for key '%s'.", t, r.key)
+		return r.failedf("Malformed parser output. Could not read '%s' "+
+			"as datetime value for key '%s'.", t, r.key)
 	}
-
-	// compare only up to millisecond resolution as required by the
-	// standard
-	estr := edate.Format(dtype)
-	tstr := tdate.Format(dtype)
-	if estr != tstr {
+	if !ef.Equal(tf) {
 		return r.failedf("Values for key '%s' don't match. Expected a "+
-			"value of '%s' but got '%v'.", r.key, estr, tstr)
+			"value of '%v' but got '%v'.", r.key, ef, tf)
 	}
 	return r
 }

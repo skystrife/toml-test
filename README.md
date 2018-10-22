@@ -104,6 +104,7 @@ and `TVALUE` is always a JSON string, except when `TTYPE` is `array` in which
 Empty hashes correspond to empty JSON objects (i.e., `{}`) and empty arrays 
 correspond to empty JSON arrays (i.e., `[]`).
 
+Datetime should be encoded following RFC 3339.
 
 ### Example JSON encoding
 
@@ -236,4 +237,4 @@ messages.
 * Julia (@pygy) - https://github.com/pygy/TOML.jl
 * PHP (@yosymfony) - https://github.com/yosymfony/toml
 * Python (@f03lipe) - https://github.com/f03lipe/toml-python
-
+* JavaScript (@iarna) - https://github.com/iarna/iarna-toml

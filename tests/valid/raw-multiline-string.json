@@ -10,5 +10,9 @@
     "multiline": {
         "type": "string",
         "value": "This string\nhas ' a quote character\nand more than\none newline\nin it."
+    },
+    "tab": {
+        "type": "string",
+        "value": "This string contains a tab character >\t<"
     }
 }
